@@ -1,0 +1,210 @@
+
+import cv2
+
+
+"""
+Two green balls:
+
+
+Before you do any of the following steps, try to detect with the online detector I had before.
+
+Steps:
+      1. Get related positions:
+         - In the input image: Detect the positions of the two green balls (g_0_pos, g_1_pos)and the black (robot) ball (r_init_pos) and its radius (r_radius).
+         - In the gt image: Detect the position of the left green ball (g_left_pos) and the contour of the black region b_pos_tar
+         - In the predicted image: Detect the position of the contour of the black region b_pos_pred (maybe find the biggest two? I don't know, let's try one first.)
+      2. In both gt and predicted image: Find the furthest point on the contour from the initial position of the robot (r_init_pos).
+         -> This is actually the position of the robot (r_pos_gt, r_pos_pred)
+      3. Compare g_left_pos with g_0_pos, g_1_pos respectively, the smallest one should be ignored and the other one (g_actual_pos) is the correct position.
+      4. Compare the distance between the d_gt = (g_actual_pos vs. r_pos_gt) and d_pred = (g_actual_pos vs. r_pos_pred).
+      5. If |d_gt - d_pred| <= 2 * r_radius, then we say it is correct, else it is not.
+"""
+
+
+
+
+
+import os
+import cv2
+import sys
+import shutil
+import imutils
+import numpy as np
+from PIL import Image
+from tqdm import tqdm
+
+
+def mkdir(folder):
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+    os.makedirs(folder)
+
+
+test_results_folder = './test_results'
+example_measure_imgs_path = './test_results/example_measure_imgs_obs_two_foods_pos'
+mkdir(example_measure_imgs_path)
+redLower = (0, 106, 46)
+redUpper = (46, 255, 255)
+greenLower = (41, 54, 110)
+greenUpper = (74, 255, 255)
+blackLower = (0, 0, 0)
+blackUpper = (255, 255, 88)
+top_k_cnts = 1
+
+test_results_files = os.listdir(test_results_folder)
+
+test_results_files = ['test_resutls_90.npy']
+test_results_policy_ids_files = ['test_resutls_policy_ids_90.npy']
+
+for p_file in tqdm(test_results_files):
+    p_ids_file_path = os.path.join(test_results_folder, test_results_policy_ids_files[0])
+    p_file_path = os.path.join(test_results_folder, p_file)
+    p_epoch_res = np.load(p_file_path)
+    p_epoch_ids = np.load(p_ids_file_path)
+
+    index = 0
+    num_batch = p_epoch_res.shape[0]
+    result = []
+    for p_batch in tqdm(range(num_batch)):
+        data = p_epoch_res[p_batch][0]
+        tar = p_epoch_res[p_batch][1]
+        res = p_epoch_res[p_batch][2]
+        ids = p_epoch_ids[p_batch][0]
+        batch_size = tar.shape[0]
+        for p_data in range(batch_size):
+            idx = ids[p_data]
+            if idx == 4:
+                # get output image
+                out_img = res[p_data]
+                out_img = np.transpose(out_img, (1, 2, 0))
+                out_img = out_img * 255
+                out_img = out_img.astype('uint8')
+                # get target image
+                tar_out_img = tar[p_data]
+                tar_out_img = np.transpose(tar_out_img, (1, 2, 0))
+                tar_out_img = tar_out_img * 255
+                tar_out_img = tar_out_img.astype('uint8')
+                
+                # get data image
+                data_out_img = data[p_data]
+                data_out_img = np.transpose(data_out_img, (1, 2, 0))
+                data_out_img = data_out_img * 255
+                data_out_img = data_out_img.astype('uint8')
+
+
+                data_out_img = cv2.cvtColor(data_out_img, cv2.COLOR_RGB2BGR)
+                blurred = cv2.GaussianBlur(data_out_img, (11, 11), 0)
+                hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+                # find out the two green balls' positions on the input image
+                greenmask = cv2.inRange(hsv, greenLower, greenUpper)
+                greenmask = cv2.erode(greenmask, None, iterations=2)
+                greenmask = cv2.dilate(greenmask, None, iterations=2)
+
+                green_cnts = cv2.findContours(greenmask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                green_cnts = imutils.grab_contours(green_cnts)
+                if len(green_cnts) <= 1:
+                    index = index + 1
+                    continue
+
+                area_array = []
+                for i, c in enumerate(green_cnts):
+                    area = cv2.contourArea(c)
+                    area_array.append(area)
+                sorteddata = sorted(zip(area_array, green_cnts), key=lambda x: x[0], reverse=True)
+
+                input_green_ball_info = {}
+                for i in range(len(sorteddata)):
+                    if i <= 1:
+                        c = sorteddata[i][1]
+                        ((x, y), radius) = cv2.minEnclosingCircle(c)
+                        M = cv2.moments(c)
+                        green_center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+                        input_green_ball_info[i] = [radius, green_center]
+                    else:
+                        break
+
+                # find the position of the left green ball in the target image
+                tar_out_img = cv2.cvtColor(tar_out_img, cv2.COLOR_RGB2BGR)
+                blurred = cv2.GaussianBlur(tar_out_img, (11, 11), 0)
+                hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+
+                greenmask = cv2.inRange(hsv, greenLower, greenUpper)
+                greenmask = cv2.erode(greenmask, None, iterations=2)
+                greenmask = cv2.dilate(greenmask, None, iterations=2)
+
+                green_cnts = cv2.findContours(greenmask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                green_cnts = imutils.grab_contours(green_cnts)
+
+                if len(green_cnts) == 0:
+                    index = index + 1
+                    continue
+
+                c = max(green_cnts, key=cv2.contourArea)
+                ((x, y), left_green_tar_radius) = cv2.minEnclosingCircle(c)
+                M = cv2.moments(c)
+                left_green_tar_center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+
+                # find out which green ball is the real target ball
+                dis0 = np.linalg.norm(np.array(input_green_ball_info[0][1]) - np.array(left_green_tar_center))
+                dis1 = np.linalg.norm(np.array(input_green_ball_info[1][1]) - np.array(left_green_tar_center))
+                if dis0 < dis1:
+                    real_tar_idx = 1
+                else:
+                    real_tar_idx = 0
+
+                real_g_radius = input_green_ball_info[real_tar_idx][0]
+                real_g_center = input_green_ball_info[real_tar_idx][1]
+
+
+                # find the largest / 2nd largest black contour on the image
+                out_img = cv2.cvtColor(out_img, cv2.COLOR_RGB2BGR)
+                blurred = cv2.GaussianBlur(out_img, (11, 11), 0)
+                hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+
+                blackmask = cv2.inRange(hsv, blackLower, blackUpper)
+                blackmask = cv2.erode(blackmask, None, iterations=2)
+                blackmask = cv2.dilate(blackmask, None, iterations=2)
+
+                black_cnts = cv2.findContours(blackmask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                black_cnts = imutils.grab_contours(black_cnts)
+
+                area_array = []
+                for i, c in enumerate(black_cnts):
+                    area = cv2.contourArea(c)
+                    area_array.append(area)
+                #first sort the array by area
+                sorteddata = sorted(zip(area_array, black_cnts), key=lambda x: x[0], reverse=True)
+                #find the nth largest contour [n-1][1], in this case 2
+                pred_cnts = []
+                for i in range(len(sorteddata)):
+                    if i < top_k_cnts:
+                        pred_cnts.append(sorteddata[i][1])
+                        cv2.drawContours(out_img, sorteddata[i][1], -1, (255, 0, 0), 2)
+                    else:
+                        break
+
+                min_dis = 1000
+                for p_c in pred_cnts:
+                    for p_p in p_c:
+                        dis = np.linalg.norm(np.array(p_p) - np.array(real_g_center))
+                        if dis < min_dis:
+                            min_dis = dis
+                            min_point = p_p
+                cv2.circle(out_img, (min_point[0][0], min_point[0][1]), 2, (0, 0, 255), -1)
+                if min_dis <= real_g_radius * 2:
+                    # print('True')
+                    result.append(1)
+                else:
+                    print('False')
+                    result.append(0)
+
+                numpy_vertical_concat = np.concatenate((data_out_img, tar_out_img, out_img), axis=1)
+                if result[-1] == 1:
+                    cv2.imwrite(os.path.join(example_measure_imgs_path, str(index) + '.png'), numpy_vertical_concat)
+                index = index + 1
+                # cv2.imshow('frame', numpy_vertical_concat)
+                # cv2.waitKey()
+
+accuracy = sum(result) / len(result) * 100
+print('total: ', len(result))
+print(accuracy)

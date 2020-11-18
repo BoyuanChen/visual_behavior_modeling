@@ -1,20 +1,31 @@
+# Visual Behavior Modelling for Robotic Theory of Mind
 
-# Visual Behavior Modeling
+[Boyuan Chen](http://boyuanchen.com/),
+[Carl Vondrick](http://www.cs.columbia.edu/~vondrick/),
+[Hod Lipson](https://www.hodlipson.com/),
+<br>
+Columbia University
+<br>
+[Scientific Reports](https://www.nature.com/srep/)
 
-### Introduction
+### [Project Website](http://www.cs.columbia.edu/~bchen/rtob) | [Video](https://youtu.be/rMl0vacvajo) | [Paper (Coming soon!)]
 
-To be announced.
+## Overview
+This repo contains the PyTorch implementation for paper "Visual Behavior Modelling for Robotic Theory of Mind".
+![rtob_teaser](figures/rtob_teaser.png)
+<br>
+![rtob_teaser_vid](figures/rtob_teaser_vid.gif)
+<br>
 
-### Data Collection
+## Content
 
-To collect the data from the real robot platform, please refer to [this repository](http://www.cs.columbia.edu/~bchen/) for the 3D printed robot and sample data collection code. Please refer to our paper for data collection details. If you are interested in the dataset, please follow the next section. We will release all the details on the robot design, CAD files, 3D printing, assembly steps, and software we developed for controlling the proposed robot in the near future.
+- [Installation](#installation)
+- [Data Preparation](#data-preparation)
+- [Training](#training)
+- [Testing](#testing)
+- [Evaluation](#evaluation)
 
-### Dataset
-
-Please donwload all the dataset from [here](https://drive.google.com/open?id=1YGiw69bvYr4B-_ReDPGQa86zm9rjsM84). To use any downloaded data, please move the downloaded folder under the current directory, unzip it, and rename it as final_data.
-
-
-### Installation
+## Installation
 
 The installation has been test on Ubuntu 16.04 with CUDA 9.0. All the experiments are performed on two TITAN X Nvidia GPUs. The training time varies across different computational platform. In our case, the training typically takes a few hours (less than 5 hours).
 
@@ -25,9 +36,13 @@ virtualenv -p /usr/bin/python3.6 env
 source env/bin/activate
 ./install_dep.sh
 ```
-Specifically, our code base relies on the following main libraries: torch, torchvision, matplotlib, opencv-python, numpy.
 
-### Training
+## Data Preparation
+
+Please donwload all the dataset from [here](https://drive.google.com/open?id=1YGiw69bvYr4B-_ReDPGQa86zm9rjsM84). To use any downloaded data, please move the downloaded folder under the current directory, unzip it, and rename it as final_data.
+
+
+## Training
 
 Run the following command to train the network:
 ```
@@ -41,7 +56,7 @@ For the two food policy, please download the dataset from the download link. Ren
 python3 main.py
 ```
 
-### Testing
+## Testing
 
 Run the following comamnd to visualize the testing result. You may need to change the directory based on your local environment setup.
 ```
@@ -49,7 +64,7 @@ python3 viewer.py
 ```
 The logged visualizations will be saved in test_results/images. The format is left: input; middle: groundtruth output; right: prediction.
 
-### Evaluation
+## Evaluation
 
 For quantitative evaluations, please refer to the folder evaluation. We provide quantitative evaluation matrix for each individual policy. For details, please refer to our paper. Run the following commands to evaluate the performance for each individual policy. Please remember to copy the test_results folder generated from training step under /evaluation directory.
 ```
@@ -61,12 +76,28 @@ python3 obs_one_food.py
 python3 obs_two_food.py
 ```
 
-### Reference
+## BibTeX
+```
+@article{chen2020visual,
+  title={Visual Behavior Modelling for Robotic Theory of Mind},
+  author={Chen, Boyuan and Vondrick, Carl and Lipson, Hod},
+  journal={Scientific reports},
+  year={2020},
+  publisher={Nature Publishing Group}
+}
+```
 
-1. Our paper under review.
+## License
 
-2. The training monitoring module is borrowed from: https://github.com/bearpaw/pytorch-classification.
+This repository is released under the MIT license. See [LICENSE](LICENSE) for additional details.
 
-### Contact
+## Acknowledgement
 
-Please feel free to reach out Boyuan Chen at bchen@cs.columbia.edu if you have any questions about our paper or the code usage.
+- This project is supported by DARPA MTO grant HR0011-18-2-0020 and NSF NRI 1925157.The authors would like to thank Yinuo Qin, Jonathan Blutinger, Boxi Xia, Philippe Wyder, and Xiaotian Hu for helping with setting up experiments and useful discussions.
+
+- The training monitoring module is borrowed from: https://github.com/bearpaw/pytorch-classification.
+
+
+## Contact
+
+Please feel free to reach out [Boyuan Chen](http://boyuanchen.com/) if you have any questions about our paper or the code usage.

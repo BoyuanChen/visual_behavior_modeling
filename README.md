@@ -6,9 +6,9 @@
 <br>
 Columbia University
 <br>
-[Scientific Reports](https://www.nature.com/srep/)
+[Nature Scientific Reports](http://www.nature.com/articles/s41598-020-77918-x)
 
-### [Project Website](http://www.cs.columbia.edu/~bchen/rtob) | [Video](https://youtu.be/rMl0vacvajo) | [Paper (Coming soon!)]
+### [Project Website](https://www.creativemachineslab.com/robot-visual-behavior-modeling.html) | [Video](https://youtu.be/rMl0vacvajo) | [Paper](http://www.nature.com/articles/s41598-020-77918-x)
 
 ## Overview
 This repo contains the PyTorch implementation for paper "Visual Behavior Modelling for Robotic Theory of Mind".

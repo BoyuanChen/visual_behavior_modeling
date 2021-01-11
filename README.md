@@ -8,7 +8,7 @@ Columbia University
 <br>
 [Nature Scientific Reports](http://www.nature.com/articles/s41598-020-77918-x)
 
-### [Project Website](https://www.creativemachineslab.com/robot-visual-behavior-modeling.html) | [Video](https://youtu.be/rMl0vacvajo) | [Paper](http://www.nature.com/articles/s41598-020-77918-x)
+### [Project Website](https://www.creativemachineslab.com/robot-visual-behavior-modeling.html) | [Video](https://youtu.be/f2U7_jZVxcU) | [Paper](http://www.nature.com/articles/s41598-020-77918-x)
 
 ## Overview
 This repo contains the PyTorch implementation for paper "Visual Behavior Modelling for Robotic Theory of Mind".
